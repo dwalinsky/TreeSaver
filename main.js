@@ -158,7 +158,7 @@ function initializer2() {
     }
     for (i=0;i<row;i++) {
         for(j=0;j<col;j++) {
-            document.images[col*i+j].src = "blank.jpg";
+            document.images[col*i+j].src = "images/blank.jpg";
         }
     }
     for (i=0;i<14;i++) {
@@ -251,7 +251,7 @@ function initializer3() {
     hm1timer = setInterval("moveHuman(0)",1300);
 }
 // Function to display an image in a table location
-function showTile (c, rows, cols) {
+function showTile(c, rows, cols) {
     if(level==1)
         document.images[col*rows+cols].src = "images/" + c + nodes[rows][cols] + ".png";
     else if(level==2)
@@ -776,6 +776,8 @@ function checkBomb(tntrow,tntcol) {
 }
 // Moves the one human present on the third level
 function moveHuman(chosen) {
+	if(nodes3[hum_row[chosen]] == undefined || nodes3[hum_row[chosen]][hum_col[chosen]] == undefined)
+		return false;
     // Removes human from map
    showTile("s",hum_row[chosen],hum_col[chosen]);
     // Moves the human's location and creates array which shows the possible directions the human can go (and not be reversed)
@@ -1021,12 +1023,16 @@ function youWin() {
         else if(level==2)
             initializer3();
         else if(level==3)
-            window.location = 'level4nq5dh6rr.html';
+            window.location = 'level4nq5dh6r.html';
     }
     else
         window.location = 'start.html';
 }
+var loseFlag = false;
 function youLose() {
+	if(loseFlag)
+		return false;
+	loseFlag = true;
     alert("Oh dear.... it looks like you're dead. While your remains decompose, your forest is rapidly converted into timber.");
     bombTimer1=0;
     var answer = confirm("Try again?");
@@ -1040,5 +1046,6 @@ function youLose() {
     }
     else
         window.location = 'start.html';
+	loseFlag = false;
 }
 
