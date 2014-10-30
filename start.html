@@ -1,43 +1,84 @@
+<!DOCTYPE html>
 <html>
 <head>
 <title>TreeSaver Featuring AngryBunny</title>
-</head>
+<style type="text/css">
+    .container {
+        position:relative;
+    }
+    .overlay {
+        position:absolute;
+        top:0;
+        left:0;
+    }
+    #overlay2 {
+        z-index:10;
+    }
+    img {
+        display:block;
+    }
 
+    #opening {
+        z-index:20;
+    }
+    #pnda {
+        z-index:19;
+    }
+</style>
+</head>
 <body>
 
-<table cellpadding=0 cellspacing=0 id="game_table"></table>
+<div class='container'>
+    <table cellpadding=0 cellspacing=0 id="game_table"></table>
+    <table cellpadding=0 cellspacing=0 id="overlay1" class='overlay'></table>
+    <table cellpadding=0 cellspacing=0 id="overlay2" class='overlay'></table>
+</div>
+
 
 <table>
-<tr>
-    <td></td>
-    <td><button type="button" id="upkey" onclick="walk(0)">W</button></td>
-    <td></td>
-</tr>
-<tr>
-    <td><button type="button" id="leftkey" onclick="walk(3)">A</button></td>
-    <td><button type="button" id="downkey" onclick="walk(2)">S</button></td>
-    <td><button type="button" id="rightkey" onclick="walk(1)">D</button></td>
-</tr>
+    <tr>
+        <td></td>
+        <td><button type="button" id="upkey" onclick="walk(0)">W</button></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td><button type="button" id="leftkey" onclick="walk(3)">A</button></td>
+        <td><button type="button" id="downkey" onclick="walk(2)">S</button></td>
+        <td><button type="button" id="rightkey" onclick="walk(1)">D</button></td>
+    </tr>
 </table>
 <table>
-<tr>
-    <td>B = <button type="button" id="tntBomb" onclick="plantTNT()">TNT</button></td>
-    <td>N = <button type="button" id="weapon2" ></button></td>
-    <td>M = <button type="button" id="weapon3" ></button></td>
-</tr>
-<tr>
-    <td></td>
-    <td></td>
-    <td><button type="pauseb" id="pauseb" onclick="pauseButton()">Pause</button></td>
-</tr>
+    <tr>
+        <td>B = <button type="button" id="tntBomb" onclick="plantTNT()">TNT</button></td>
+        <td>N = <button type="button" id="weapon2" ></button></td>
+        <td>M = <button type="button" id="weapon3" ></button></td>
+    </tr>
+    <tr>
+        <td></td>
+        <td></td>
+        <td><button type="pauseb" id="pauseb" onclick="pauseButton()">Pause</button></td>
+    </tr>
 </table>
-<audio autostart=true hidden=true>
-	<source src="05 Animal Rights.mp3" type="audio/mpeg">
+
+<img id="opening" src="images/opening.jpg" usemap="#openingmap" class='overlay' />
+<map name="openingmap">
+     <area shape="rect" coords="95,350,360,405" alt="play" onclick="startFromLevel(1)"  />
+     <area shape="rect" coords="535,355,710,405" alt="login" onclick="enterCode()" />
+</map>
+
+<img src="images/PNDAlogo.jpg" id="pnda" class='overlay'>
+
+
+<audio controls id="animal_rights">
+    <source src="animal_rights.mp3" type="audio/mpeg">
+    <source src="animal_rights.ogg" type="audio/ogg">
 </audio>
 
+<script type="text/javascript" src="ai.js"></script>
+<script type="text/javascript" src="levels.js"></script>
 <script type="text/javascript" src="main.js"></script>
-</body>
 
+</body>
 
 
 </html>
