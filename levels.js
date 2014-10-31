@@ -31,7 +31,6 @@ function startLvl() {
     }
     rocks = [];
 
-
     if(bombTimer)
         clearTimeout(bombTimer);
     bombTimer = false;
@@ -43,13 +42,15 @@ function startLvl() {
     winFlag = false;
 
     current_page = new Location(0, 0);
+	page_count_x = 1;
+	page_count_y = 1;
 
     level_init_functions[parseInt(level) - 1]();
 
     city_tiles = [];
-    for(var i=0;i<row_count;i++) {
+    for(var i=0;i<tileStat.length;i++) {
         city_tiles.push([]);
-        for(var j=0;j<col_count;j++) {
+        for(var j=0;j<tileStat[i].length;j++) {
             city_tiles[i].push(tileStat[i][j] == 4);
         }
     }
@@ -76,6 +77,12 @@ function startLvl() {
             }
         }
         controls_active = true;
+		for(var x=0;x<page_count_x;x++) {
+			for(var y=0;y<page_count_y;y++) {
+				if(!current_page.compareTo(new Location(x, y)))
+					pausePage(new Location(x, y));
+			}
+		}
     },0);
 }
 
@@ -151,7 +158,7 @@ var level_init_functions = [
         bulldozers = [
             new Bulldozer(1200, new Location(0, 3), 1),
             new Bulldozer(910, new Location(0, 8), 1),
-            new Bulldozer(880, new Location(5, 0), 2)
+            new Bulldozer(840, new Location(5, 0), 2)
         ];
     }, function() {
         // LEVEL 3
@@ -190,10 +197,10 @@ var level_init_functions = [
         my_loc = new Location(10, 6);
 
         bulldozers = [
-            new Bulldozer(1200, new Location(0, 3), 1),
+            new Bulldozer(1190, new Location(0, 3), 1),
             new Bulldozer(910, new Location(11, 0), 2),
-            new Bulldozer(880, new Location(19, 8), 3),
-            new Bulldozer(790, new Location(11, 13), 0)
+            new Bulldozer(830, new Location(19, 8), 3),
+            new Bulldozer(720, new Location(11, 13), 0)
         ];
         humans = [
             new Human(1200, new Location(19, 13), 0)
@@ -243,7 +250,7 @@ var level_init_functions = [
         my_loc = new Location(3, 2);
 
         bulldozers = [
-            new Bulldozer(1200, new Location(5, 9), 3),
+            new Bulldozer(1160, new Location(5, 9), 3),
             new Bulldozer(910, new Location(6, 9), 1),
         ];
         humans = [
@@ -270,6 +277,7 @@ var level_init_functions = [
         var forest14 = new Array("0011","1010","1010","0110","1111","1111","1111","1111","0011","1010","1010","0110","1111","1111","0011","0110","0011","0010","1010","1010","0010","0010","0010","0010","0010","1010","1010","0110");
         nodes = [forest1,forest2,forest3,forest4,forest5,forest6,forest7,forest8,forest9,forest10,forest11,forest12,forest13,forest14];
 
+		page_count_x = 2;
 
         tileStat = new Array();
         for (i=0;i<row_count;i++) {
@@ -310,6 +318,23 @@ var level_init_functions = [
         }
 
         my_loc = new Location(2, 2);
+
+		bulldozers = [
+            new Bulldozer(810, new Location(0, 11), 1),
+            new Bulldozer(660, new Location(26, 6), 1),
+		];
+
+		humans = [
+			new Human(1100, new Location(13, 5), 2),
+			new Human(1120, new Location(10, 7), 1),
+			new Human(1040, new Location(13, 8), 3),
+			new Human(900, new Location(19, 2), 1),
+			new Human(1200, new Location(15, 10), 2),
+			new Human(850, new Location(23, 4), 3),
+			new Human(1070, new Location(25, 4), 0)
+		];
+
+		$("#arrow").show();
     }
 ];
 

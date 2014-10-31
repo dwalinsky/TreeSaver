@@ -1,9 +1,9 @@
 
-var my_loc, my_dir = 2, current_page,
+var my_loc, my_dir = 2, current_page, page_count_x, page_count_y,
     row_count, col_count, level,
     nodes = [], tileStat = [], city_tiles = [];
     bulldozers = [], humans = [], rocks = [], pools = [],
-    bombTimer = false, loseFlag = false, winFlag = false, controls_active = false;
+    bombTimer = false, loseFlag = false, winFlag = false, controls_active = false, game_paused = false;
 
 
 function Location(x, y) {
@@ -30,6 +30,11 @@ function getNewLoc(start_loc, direction) {
     }
     return new_loc;
 }
+function checkIfTileAtLoc(location) {
+	if(location.x < 0 || location.x >= col_count*page_count_x || location.y < 0 || location.y >= row_count*page_count_y)
+		return false;
+	return true;
+}
 function dirToTileType(direction) {
     switch(direction) {
         case 0: return "u"; //up
@@ -40,6 +45,7 @@ function dirToTileType(direction) {
 }
 function statToBGType(status) {
     switch(status) {
+		case 0: return "g"; //grass
         case 1: return "tr"; //tree
         case 2: return "bd"; //bulldozed
         case 3: return "d"; //destroyed
@@ -119,8 +125,11 @@ function walk(direction) {
         // check if we are on a new page
         var my_current_page = new Location(Math.floor(my_loc.x / col_count), Math.floor(my_loc.y / row_count));
         if(!my_current_page.compareTo(current_page)) {
+			pausePage(current_page);
+			unpausePage(my_current_page);
             current_page = my_current_page;
             processAllTiles();
+			$("#arrow").hide();
         }
         else {
             processTile(prev_loc);
@@ -146,6 +155,72 @@ function plantTNT() {
     },1000);
 }
 
+// Special ability added after fourth level
+function addSpecialAbility(type, callback) {
+	$("#"+type).fadeIn(function() {
+		setTimeout(function() {
+		$("#"+type).fadeOut();
+			if(typeof callback == "function") {
+				callback();
+			}
+		}, 3500);
+	});
+	$("#weapon2").html(type.toUpperCase());
+	var special_ability_cooldown = false;
+	specialAbility = function() {
+		if(special_ability_cooldown)
+			return false;
+		special_ability_cooldown = setTimeout(function() {
+			special_ability_cooldown = false;
+		}, type == "vines" ? 900 : 1250);
+
+		switch(type) {
+			case "vines":
+				var new_loc = my_loc;
+				for(i=0;i<3;i++) {
+					new_loc = getNewLoc(new_loc, my_dir);
+				}
+				if(!checkIfTileAtLoc(new_loc) || !isOnPage(new_loc, current_page))
+					return false;
+				showTile(2, "vines", new_loc);
+				checkWeapon(new_loc, false, true, true);
+				if(tileStat[new_loc.y][new_loc.x] != 1) {
+					// If tile is not a lake, change it to a grassy area
+					tileStat[new_loc.y][new_loc.x] = 0;
+				}
+
+				setTimeout(function() {
+					showTile(2, "blank", new_loc);
+					checkWeapon(new_loc, false, true, true);
+					processTile(new_loc);
+				}, 400);
+			break;
+			case "acid":
+				var new_locs = [];
+				new_locs.push(getNewLoc(my_loc, my_dir));
+				new_locs.push(getNewLoc(new_locs[0], my_dir));
+				new_locs.push(getNewLoc(new_locs[1], (my_dir + 5) % 4));
+				new_locs.push(getNewLoc(new_locs[1], (my_dir + 3) % 4));
+				for(var i=0;i<new_locs.length;i++) {
+					(function(loc) {
+						if(!checkIfTileAtLoc(loc) || !isOnPage(loc, current_page))
+							return false;
+						showTile(2, "acid", loc);
+						checkWeapon(loc, false, true, true);
+						tileStat[loc.y][loc.x] = 3;
+						processTile(loc);
+
+						setTimeout(function() {
+							showTile(2, "blank", loc);
+							checkWeapon(loc, false, true, true);
+							processTile(loc);
+						}, 300);
+					})(new_locs[i]);
+				}
+		}
+	};
+}
+
 // Checks a weapon to see if anyone was hit. Returns true if the weapon hit something
 function checkWeapon(location, can_hurt_player, can_hurt_bulldozer, can_hurt_human) {
     if(can_hurt_player && location.compareTo(my_loc)) {
@@ -155,7 +230,6 @@ function checkWeapon(location, can_hurt_player, can_hurt_bulldozer, can_hurt_hum
     var bd_list = [], hum_list = [];
     if(can_hurt_bulldozer) {
         bd_list = checkForAI(bulldozers, location, true);
-        console.log(bd_list);
         for(var i=0;i<bd_list.length;i++) {
             bd_list[i].destroy();
         }
@@ -168,6 +242,40 @@ function checkWeapon(location, can_hurt_player, can_hurt_bulldozer, can_hurt_hum
         }
     }
     return hum_list.length || bd_list.length;
+}
+
+function isOnPage(loc, page) {
+	if(loc.x >= col_count*page.x && loc.x < col_count*(page.x + 1) && loc.y >= row_count*page.y && loc.y < row_count*(page.y + 1))
+		return true;
+	return false;
+}
+
+function pausePage(page) {
+	var allAIs = bulldozers.concat(humans).concat(rocks);
+
+	for(var i=0;i<allAIs.length;i++) {
+		if(isOnPage(allAIs[i].location, page)) {
+			// AI is on page
+			allAIs[i].timer.pause();
+		}
+	}
+}
+function unpausePage(page) {
+	var allAIs = bulldozers.concat(humans).concat(rocks);
+	for(var i=0;i<allAIs.length;i++) {
+		if(isOnPage(allAIs[i].location, page)) {
+			// AI is on page
+			allAIs[i].timer.start();
+		}
+	}
+}
+
+function pauseButton() {
+	game_paused = !game_paused;
+	if(game_paused)
+		pausePage(current_page);
+	else
+		unpausePage(current_page);
 }
 
 function checkWin() {
@@ -231,6 +339,10 @@ function youWin() {
         return false;
 
     winFlag = setTimeout(function() {
+		if(level == 5) {
+			alert("Yay! You won the game. The End.");
+			return true;
+		}
         var score = calcScore();
         alert("YOU WIN! Your forest is safe. For now...\nTrees saved: "
             + score.trees.saved + "/" + score.trees.total + "\nPools saved: "
@@ -238,13 +350,17 @@ function youWin() {
         level++;
         winFlag = false;
 
-        startLvl();
+		if(level == 5) {
+			addSpecialAbility(humans[0].intact ? "vines" : "acid", startLvl);
+		}
+		else {
+			startLvl();
+		}
     }, 800);
 }
 function youLose() {
 	if(loseFlag)
 		return false;
-    my_loc = new Location(-1, -1);
     controls_active = false;
 
     loseFlag = setTimeout(function() {
@@ -257,9 +373,12 @@ function youLose() {
 
 function KeyCheck(e) {
     if(!controls_active)
-        return false;
+        return true;
 
     var KeyID = (window.event) ? event.keyCode : e.keyCode;
+	if(game_paused && KeyID != 80) {
+		return true;
+	}
     switch(KeyID) {
         case 87:
             walk(0);
@@ -276,6 +395,13 @@ function KeyCheck(e) {
         case 66:
             plantTNT();
             break;
+		case 78:
+			if(typeof specialAbility != "undefined")
+				specialAbility();
+			break;
+		case 80:
+			pauseButton();
+			break;
     }
 }
 
@@ -295,7 +421,7 @@ function enterCode() {
         alert("Sorry, the code you entered wasn't valid...");
 }
 function startFromLevel(new_lvl) {
-    document.getElementById('animal_rights').play();
+    //document.getElementById('animal_rights').play();
     document.getElementById('opening').style.display = "none";
     var pnda = document.getElementById('pnda');
     pnda.height = window.innerHeight;

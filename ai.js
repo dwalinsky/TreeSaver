@@ -1,3 +1,28 @@
+// Definition for AI timers
+function Timer(callback, delay) {
+    var id, started, remaining = delay, running
+
+    this.start = function() {
+        running = true;
+        started = new Date();
+        id = setTimeout(callback, remaining);
+    };
+
+    this.pause = function() {
+        running = false;
+        clearTimeout(id);
+        remaining -= new Date() - started;
+    };
+	
+	this.end = function() {
+		running = false;
+		clearTimeout(id);
+		remaining = 0;
+	};
+
+    this.start()
+}
+
 
 function AI(speed, start_loc, start_dir) {
     this.intact = true;
@@ -8,19 +33,26 @@ function AI(speed, start_loc, start_dir) {
     this.timer = false;
 }
 AI.prototype.destroy = function() {
-    clearTimeout(this.timer);
+    this.timer.end();
     this.intact = false;
+};
+AI.prototype.pause = function() {
+	this.timer.pause();
+};
+AI.prototype.unpause = function() {
+	this.timer.start();
 };
 
 AI.prototype.start = function() {
     if(this instanceof Bulldozer) {
         if(tileStat[this.location.y][this.location.x] == 1)
             tileStat[this.location.y][this.location.x] = 2;
-        processTile(this.location);
+        if(isOnPage(this.location, current_page))
+			processTile(this.location);
     }
 
     var _this = this;
-    this.timer = setTimeout(function() {_this.move()}, _this.speed);
+    this.timer = new Timer(function() {_this.move()}, _this.speed);
 };
 
 AI.prototype.move = function() {
@@ -39,7 +71,7 @@ AI.prototype.move = function() {
     // Move AI 
     var prev_loc = new Location(this.location.x, this.location.y);
     this.location = getNewLoc(this.location, this.direction);
-    if(this.location.x < 0 || this.location.x >= col_count || this.location.y < 0 || this.location.y >= row_count) {
+    if(!checkIfTileAtLoc(this.location)) {
         this.destroy();
         processTile(prev_loc);
         return false;
@@ -66,8 +98,7 @@ AI.prototype.move = function() {
         }
 
         var possible_new_location = getNewLoc(this.location, i);
-        if(typeof tileStat[possible_new_location.y] == 'undefined' || typeof tileStat[possible_new_location.y][possible_new_location.x] == 'undefined' ) {
-            console.log(possible_new_location, i);
+        if(!checkIfTileAtLoc(possible_new_location)) {
             possible_directions.push(i);
             continue;
         }
@@ -95,16 +126,24 @@ AI.prototype.move = function() {
 
     this.direction = possible_directions[Math.floor(Math.random()*possible_directions.length)];
 
-    // Show the new tile
+    var _this = this;
+    this.timer = new Timer(function() {_this.move()}, _this.speed)
+
+	// Hide old tile
     processTile(prev_loc);
+
+	// If the AI went to a new page, we should pause it
+	if(!isOnPage(this.location, current_page)) {
+		this.timer.pause();
+		return false;
+	}
+
+    // Show the new tile
     processTile(this.location);
 
     // Check if bulldozer rode over bunny
     if(this instanceof Bulldozer)
         checkWeapon(this.location, true, false, false);
-
-    var _this = this;
-    this.timer = setTimeout(function() {_this.move()}, _this.speed)
 };
 
 function Bulldozer(speed, start_loc, start_dir) {
@@ -120,7 +159,7 @@ Human.prototype = Object.create(AI.prototype);
 Human.prototype.constructor = Human;
 Human.prototype.checkLOS = function() {
     var loc = new Location(this.location.x, this.location.y);
-    while(loc.x > 0 && loc.x < col_count && loc.y > 0 && loc.y < row_count) {
+    while(checkIfTileAtLoc(loc)) {
         if(nodes[loc.y][loc.x].charAt(this.direction) == '1')
             break;
         loc = getNewLoc(loc, this.direction);
@@ -133,15 +172,15 @@ Human.prototype.checkLOS = function() {
 
 Human.prototype.throwRock = function() {
     var _this = this;
-    this.timer = setTimeout(function() {
+    this.timer = new Timer(function() {
         if(_this.intact) {
             rocks.push(new Rock(_this.location, _this.direction));
 
-            _this.timer = setTimeout(function() {
+            _this.timer = new Timer(function() {
                 _this.move();
             }, _this.speed)
         }
-    }, _this.speed * 0.5)
+    }, _this.speed * 0.22)
 };
 
 function Rock(location, direction) {
@@ -153,9 +192,9 @@ function Rock(location, direction) {
     this.distance_traveled = 0;
 
     var _this = this;
-    this.timer = setTimeout(function() {
+    this.timer = new Timer(function() {
         _this.move();
-    }, 150);
+    }, 100);
 }
 Rock.prototype.move = function() {
     showTile(2, 'blank', this.location);
@@ -163,7 +202,7 @@ Rock.prototype.move = function() {
     if(!this.intact) {
         return false;
     }
-    if(!checkDirection(this.location, this.direction) || this.distance_traveled > 5) {
+    if(!checkDirection(this.location, this.direction) || this.distance_traveled > 6) {
         for(var i=0;i<rocks.length;i++) {
             if(rocks[i] === this) {
                 rocks.splice(i, 1);
@@ -173,17 +212,28 @@ Rock.prototype.move = function() {
         return true;
     }
     this.location = getNewLoc(this.location, this.direction);
+
+	// If rock went off page, remove it
+	
+	if(!isOnPage(this.location, current_page)) {
+		this.intact = false;
+		return true;
+	}
+
     showTile(2, 'bullet', this.location);
 
-    if(checkWeapon(this.location, true, false, true)) {
+	var bullet_hit = checkWeapon(this.location, true, false, true);
+    if(bullet_hit) {
         this.intact = false;
         this.hit = true;
+		if(bullet_hit !== true)
+			processTile(this.location);
     }
 
     var _this = this;
-    this.timer = setTimeout(function() {
+    this.timer = new Timer(function() {
         _this.move();
-    }, 120+(this.distance_traveled*5)+(this.hit ? 200 : 0));
+    }, 100+(this.distance_traveled*5)+(this.hit ? 600 : 0));
 
     this.distance_traveled++;
 };

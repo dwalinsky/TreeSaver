@@ -24,6 +24,15 @@
     #pnda {
         z-index:19;
     }
+	#acid, #vines {
+		display:none;
+	}
+	#arrow {
+		display:none;
+		position:absolute;
+		left:435px;
+		top:7px;
+	}
 </style>
 </head>
 <body>
@@ -33,6 +42,7 @@
     <table cellpadding=0 cellspacing=0 id="overlay1" class='overlay'></table>
     <table cellpadding=0 cellspacing=0 id="overlay2" class='overlay'></table>
 </div>
+<img id="arrow" src="images/arrow.png">
 
 
 <table>
@@ -67,6 +77,8 @@
 </map>
 
 <img src="images/PNDAlogo.jpg" id="pnda" class='overlay'>
+<img src="images/AofD.jpg" id="acid" class='overlay'>
+<img src="images/AofN.jpg" id="vines" class='overlay'>
 
 
 <audio controls id="animal_rights">
@@ -74,6 +86,7 @@
     <source src="animal_rights.ogg" type="audio/ogg">
 </audio>
 
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 <script type="text/javascript" src="ai.js"></script>
 <script type="text/javascript" src="levels.js"></script>
 <script type="text/javascript" src="main.js"></script>
